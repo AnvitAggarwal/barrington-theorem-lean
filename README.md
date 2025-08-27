@@ -1,1 +1,1 @@
-# barrington-s-theorem-formalisation
+# barrington-theorem-lean
