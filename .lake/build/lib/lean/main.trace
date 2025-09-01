@@ -1,0 +1,26 @@
+{"synthetic": false,
+ "outputs":
+ {"o": ["16970839271838296192"],
+  "i": "9739566839795292130",
+  "c": "7412738551421675621"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=/home/anvit/barrington-theorem-lean/.lake/build/lib/lean /home/anvit/.elan/toolchains/leanprover--lean4---v4.22.0/bin/lean /home/anvit/barrington-theorem-lean/main.lean -o /home/anvit/barrington-theorem-lean/.lake/build/lib/lean/main.olean -i /home/anvit/barrington-theorem-lean/.lake/build/lib/lean/main.ilean -c /home/anvit/barrington-theorem-lean/.lake/build/ir/main.c --setup /home/anvit/barrington-theorem-lean/.lake/build/ir/main.setup.json --json",
+   "level": "trace"}],
+ "inputs":
+ [["main:deps",
+   [["deps",
+     [["barrington_theorem_lean/barrington_theorem_lean:extraDep",
+       [["@barrington_theorem_lean:extraDep", "1723"]]],
+      ["import oleans", "1723"]]],
+    ["libs",
+     [["import dynlibs", "1723"],
+      ["package external libraries", "1723"],
+      ["module dynlibs", "1723"],
+      ["module plugins", "1723"]]]]],
+  ["Lean 4.22.0, commit ba2cbbf09d4978f416e0ebd1fceeebc2c4138c05",
+   "8739116525927611134"],
+  ["/home/anvit/barrington-theorem-lean/main.lean", "2433114807351286261"],
+  ["options", "1723"],
+  ["Module.leanArgs: #[]", "1723"]],
+ "depHash": "4434189346766144276"}
