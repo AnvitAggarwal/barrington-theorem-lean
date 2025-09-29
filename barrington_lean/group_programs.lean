@@ -56,3 +56,4 @@ def example_GP : GroupProgram (Equiv.Perm (Fin 5))
   := [triple₁, triple₂, triple₃]
 
 #eval evalProgram x example_GP
+#eval example_GP.length
