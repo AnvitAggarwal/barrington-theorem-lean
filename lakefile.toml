@@ -1,16 +1,11 @@
 name = "BarringtonTheorem"
 version = "0.1.0"
-defaultTargets = ["barringtontheorem"]
+defaultTargets = ["BarringtonTheorem"]
 
 [[lean_lib]]
 name = "BarringtonTheorem"
 
-[[lean_exe]]
-name = "barringtontheorem"
-root = "Main"
-
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "stable"
-
+rev = "v4.25.0-rc2"
