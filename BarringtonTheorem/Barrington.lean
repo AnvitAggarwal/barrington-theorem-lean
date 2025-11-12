@@ -8,18 +8,14 @@ section EvalProgram
 
 variable {n m : ℕ}
 
+attribute [grind =] List.prod_append
+
 lemma evalProgram_join (P : GroupProgram (Equiv.Perm (Fin n)) m) (Q : GroupProgram (Equiv.Perm (Fin n)) m) :
-  ∀ (x : Input m), evalProgram x (P ++ Q) = (evalProgram x P) * (evalProgram x Q) := by
-  intro x
-  simp [evalProgram]
+  ∀ (x : Input m), evalProgram x (P ++ Q) = (evalProgram x P) * (evalProgram x Q) := by grind
 
 lemma evalProgram_product (P : GroupProgram (Equiv.Perm (Fin n)) m) (α : Equiv.Perm (Fin n)) (fm : Fin m) :
   ∀ (x : Input m), evalProgram x (P ++ [{i := fm, g₀ := α, g₁ := α}])  = evalProgram x P * α := by
-  have h := evalProgram_join P [{i := fm, g₀ := α, g₁ := α}]
-  intro x
-  rw [h x]
-  nth_rewrite 2 [evalProgram]
-  simp [evalTriple]
+  grind [List.prod_cons, List.prod_nil, mul_one]
 
 lemma evalProgram_conjugate
     (P : GroupProgram (Equiv.Perm (Fin n)) m)
@@ -30,68 +26,28 @@ lemma evalProgram_conjugate
           g₀ := γ * t.g₀ * γ⁻¹,
           g₁ := γ * t.g₁ * γ⁻¹ })) =
       γ * evalProgram x P * γ⁻¹ := by
-  induction P
-  case nil =>
-    simp [evalProgram]
-  case cons head tail tail_ih =>
-    simp [evalProgram]
-    simp [evalProgram] at tail_ih
-    rw [tail_ih]
-    simp [evalTriple]
+  induction P <;> simp_all [evalProgram, evalTriple]
 
 end EvalProgram
 
 section HelperInequalities
 
-lemma nat_le_sub_one_of_max_le_left (n m k : ℕ) (h_one_add_max_le : 1 + max n m ≤ k) : n ≤ k - 1 := by
-  have zero_lt_k : 0 < k := Nat.lt_of_succ_le (Nat.le_of_add_right_le h_one_add_max_le)
-  have hn_lt_k : n < k := lt_of_le_of_lt (le_max_left n m) (Nat.one_add_le_iff.mp h_one_add_max_le)
-  exact (Nat.le_sub_one_iff_lt zero_lt_k).mpr hn_lt_k
-
-lemma nat_le_sub_one_of_max_le_right (n m k : ℕ) (h_one_add_max_le : 1 + max n m ≤ k) : m ≤ k - 1 := by
-  have zero_lt_k : 0 < k := Nat.lt_of_succ_le (Nat.le_of_add_right_le h_one_add_max_le)
-  have h_m_lt_k : m < k := lt_of_le_of_lt (le_max_right n m) (Nat.one_add_le_iff.mp h_one_add_max_le)
-  exact (Nat.le_sub_one_iff_lt zero_lt_k).mpr h_m_lt_k
-
 lemma two_mul_add_le_pow_succ_of_le_pow_pred
  (n m k d f1 f2 : ℕ) (hn : n ≤ 4 ^ (d - 1))
  (hm : m ≤ 4 ^ (d - 1)) (hk : k = 2 * (n + m))
  (h_one_add_max_le_d : 1 + max f1 f2 ≤ d) : k ≤ 4 ^ d := by
-  have h1 := add_le_add hn hm
-  rw [← two_mul] at h1
-  rw [hk]
-  have h2 : 2 * (n + m) ≤ 2 * (2 * 4 ^ (d - 1)) :=
-    by exact Nat.mul_le_mul_left 2 h1
-  rw [← Nat.mul_assoc 2 2 (4 ^ (d - 1))] at h2
-  simp at h2
-  rw [mul_comm 4 (4 ^ (d - 1)), ← Nat.pow_succ 4 (d - 1), ← Nat.pred_eq_sub_one] at h2
-  rw [Nat.succ_pred_eq_of_pos (Nat.lt_of_succ_le (Nat.le_of_add_right_le h_one_add_max_le_d))] at h2
-  exact h2
-
-lemma nat_le_sub_one (d k: ℕ) (h_one_add_lt : 1 + d ≤ k) : d ≤ k-1 := by
-  have zero_lt_k : 0 < k := Nat.lt_of_succ_le (Nat.le_of_add_right_le h_one_add_lt)
-  have hd_lt_k : d < k := Nat.one_add_le_iff.mp h_one_add_lt
-  exact (Nat.le_sub_one_iff_lt zero_lt_k).mpr hd_lt_k
+  have h2 : 2 * (n + m) ≤ 2 * (2 * 4 ^ (d - 1)) := by grind
+  have a : (d - 1) + 1 = d := by grind
+  rw [← Nat.mul_assoc 2 2 (4 ^ (d - 1)), mul_comm 4 (4 ^ (d - 1))] at h2
+  simp_all only [← Nat.pow_succ, Nat.succ_eq_add_one] 
 
 lemma succ_four_pow_le_four_pow_succ (d : ℕ) : 1 + 4 ^ d ≤ 4 ^ (d + 1) := by
-  induction d
-  case zero => simp
-  case succ n hn =>
-    have h1 := Nat.mul_le_mul_left 4 hn
-    rw [Nat.mul_add] at h1
-    simp at h1
-    rw [← pow_succ', ← pow_succ'] at h1
-    have h2 : 1 + 4 ^ (n + 1) ≤ 4 + 4 ^ (n + 1) := by linarith
-    exact le_trans h2 h1
+  induction d <;> grind
 
 lemma succ_le_four_pow_of_le_four_pow_pred (n m k : ℕ) (h_k_gt_one : 1 <= k) (h_n_eq_m_add_one : n = m + 1) (h_m_le_four_power_k_sub_one: m ≤ 4 ^ (k - 1)) :
 n ≤ 4^k := by
   have h1 := succ_four_pow_le_four_pow_succ (k - 1)
-  rw [Nat.sub_add_cancel] at h1
-  have h2 := add_le_add_left h_m_le_four_power_k_sub_one 1
-  rw [add_comm, ←h_n_eq_m_add_one] at h2
-  exact le_trans h2 h1
-  exact h_k_gt_one
+  rw [Nat.sub_add_cancel] at h1 <;> grind
 
 end HelperInequalities
 
@@ -99,6 +55,7 @@ section Computability
 
 variable {m : ℕ}
 
+@[grind]
 def computes_with {G : Type} [Group G] (α : G)
     (P : GroupProgram G m) (f : Input m → Bool) : Prop :=
   ∀ (x : Input m), evalProgram x P = if f x then α else 1
@@ -131,17 +88,9 @@ lemma computable_for_conj_cycles
   · intro x
     simp [Q]
     rw [evalProgram_conjugate P γ x]
-    rw [SemiconjBy] at hγ
-    rw [computes_with] at hcomputes_with
-    rw [hcomputes_with x]
     by_cases f x
-    case pos hpos =>
-      rw [hpos]
-      simp
-      rw [hγ]
-      rw [mul_inv_cancel_right β ↑γ]
-    case neg hneg =>
-      simp [hneg]
+    case pos hpos => grind [mul_inv_cancel_right, SemiconjBy]
+    case neg hneg => grind [mul_one, mul_inv_cancel]
 
 lemma product_cycles_conjugate_cycle :
     ∃ (α β : Equiv.Perm (Fin 5)),
@@ -166,12 +115,9 @@ lemma product_cycles_conjugate_cycle :
     . trivial -- α 0 ≠ 0
     -- ∀ y ∈ (Fin 5), SameCycle 0 y in α
     . intro y hy
-      fin_cases y
-      . use 0; trivial -- (α ^ 0) 0 = 0
-      . use 1; trivial -- (α ^ 1) 0 = 1
-      . use 2; trivial -- (α ^ 2) 0 = 2
-      . use 3; trivial -- (α ^ 3) 0 = 3
-      . use 4; trivial -- (α ^ 4) 0 = 4
+      fin_cases y <;>
+      [use 0; use 1; use 2; use 3; use 4] <;>
+      trivial
   -- α.support.card = 5
   . decide
 
@@ -251,13 +197,7 @@ lemma and_computable
         rw [hP, hQ, hR, hS]
         rw [←mul_assoc, ←mul_assoc]
       case neg gneg =>
-        simp [fpos, gneg]
-        simp [fpos] at hP
-        simp [fpos] at hR
-        simp [gneg] at hQ
-        simp [gneg] at hS
-        rw [hP, hQ, hR, hS]
-        rw [←mul_assoc, ←mul_assoc, mul_one, mul_one, mul_inv_cancel]
+        simp_all [mul_inv_cancel, mul_one]
     case neg fneg =>
       by_cases g x
       case pos gpos =>
@@ -338,7 +278,7 @@ theorem barrington_theorem
     simp [Formula.eval] at hφf
     have hF_eval_eq : ∀ (x : Input m), F.eval x = decide ¬f x = true := by
       simp [hφf]
-    have ih := @F_ih (d - 1) (λ x => ¬ f x) (nat_le_sub_one F.depth d hφd) hF_eval_eq
+    have ih := @F_ih (d - 1) (λ x => ¬ f x) (by grind) hF_eval_eq
     intro α hαcycle hαsupport
     rcases ih α hαcycle hαsupport with ⟨P, hPlen, hcomputes_withP⟩
     rcases not_computable α P (λ x => ¬ f x) hαcycle hcomputes_withP with
@@ -353,10 +293,8 @@ theorem barrington_theorem
     let f1 : Input m → Bool := λ x => F1.eval x
     let f2 : Input m → Bool := λ x => F2.eval x
     unfold Formula.depth at hφd
-    have hf1depth_le_d : F1.depth ≤ d - 1 :=
-      nat_le_sub_one_of_max_le_left F1.depth F2.depth d hφd
-    have hf2depth_le_d : F2.depth ≤ d - 1 :=
-      nat_le_sub_one_of_max_le_right F1.depth F2.depth d hφd
+    have hf1depth_le_d : F1.depth ≤ d - 1 := by grind
+    have hf2depth_le_d : F2.depth ≤ d - 1 := by grind
     rcases product_cycles_conjugate_cycle with ⟨α, β, hαcycle, hαsupport, hβcycle, hβsupport, hαβConjProd, hαβConjProdSupport⟩
     rcases (hF1 f1 hf1depth_le_d (by simp [f1]) α) hαcycle hαsupport with ⟨P, hPLength, hcomputesf1⟩
     rcases (hF2 f2 hf2depth_le_d (by simp [f2]) β) hβcycle hβsupport with ⟨Q, hQLength, hcomputesf2⟩

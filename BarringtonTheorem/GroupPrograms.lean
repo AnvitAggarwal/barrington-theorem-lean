@@ -4,6 +4,7 @@ namespace BarringtonTheorem
 
 variable [Group G]
 
+@[grind]
 structure GPTriple (G : Type) (n : ℕ) where
   i : Fin n
   g₀ : G
@@ -13,9 +14,11 @@ abbrev GroupProgram (G : Type) (n : ℕ) := List (GPTriple G n)
 abbrev Input (n : ℕ):= Fin n → Bool
 variable {G : Type} [Group G]
 
+@[grind]
 def evalTriple (x : Input n) (t : GPTriple G n) : G :=
   if x t.i then t.g₁ else t.g₀
 
+@[grind]
 def evalProgram (x : Input n) (P : GroupProgram G n) : G :=
   (P.map (evalTriple x)).prod
 
