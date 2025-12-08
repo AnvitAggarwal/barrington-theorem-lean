@@ -281,14 +281,23 @@ theorem barrington_theorem
       have hF_eval_eq : ∀ (x : Input m), (formula_in 0).eval x = decide ¬f x = true := by
         simp [BoolBasis.eval] at hφf
         simp [hφf]
-      have ih := @F_ih 0 (d - 1) (λ x => ¬ f x) (by grind) hF_eval_eq
+      let fd := fun i => (formula_in i).depth
+      have h0 : fd 0 ≤ Finset.univ.sup (fun i => (formula_in i).depth) := by
+        apply Finset.le_sup
+        simp
+      simp at hφd
+      have h1 : fd 0 ≤ d - 1 := le_trans h0 (by grind)
+      simp [fd] at h1
+
+      have ih := @F_ih 0 (d - 1) (λ x => ¬ f x) h1 hF_eval_eq
       intro α hαcycle hαsupport
       rcases ih α hαcycle hαsupport with ⟨P, hPlen, hcomputes_withP⟩
       rcases not_computable α P (λ x => ¬ f x) hαcycle hcomputes_withP with
         ⟨Q, hQLen, hcomputes_withQ⟩
       use Q
       constructor
-      · exact succ_le_four_pow_of_le_four_pow_pred Q.length P.length d (Nat.le_of_add_right_le hφd) hQLen hPlen
+      · rw [add_comm] at hφd
+        exact succ_le_four_pow_of_le_four_pow_pred Q.length P.length d (Nat.le_of_add_right_le hφd) hQLen hPlen
       · simp at hcomputes_withQ
         exact hcomputes_withQ
 
@@ -296,11 +305,19 @@ theorem barrington_theorem
       let f1 : Input m → Bool := λ x => (formula_in 0).eval x
       let f2 : Input m → Bool := λ x => (formula_in 1).eval x
       unfold Formula.depth at hφd
+      let fd := fun i => (formula_in i).depth
+      have h0 : fd 0 ≤ Finset.univ.sup (fun i => (formula_in i).depth) := by
+        apply Finset.le_sup
+        simp
+      let fd := fun i => (formula_in i).depth
+      have h1 : fd 1 ≤ Finset.univ.sup (fun i => (formula_in i).depth) := by
+        apply Finset.le_sup
+        simp
       have hf1depth_le_d : (formula_in 0).depth ≤ d - 1 := by grind
       have hf2depth_le_d : (formula_in 1).depth ≤ d - 1 := by grind
       rcases product_cycles_conjugate_cycle with ⟨α, β, hαcycle, hαsupport, hβcycle, hβsupport, hαβConjProd, hαβConjProdSupport⟩
-      rcases (hF1 f1 hf1depth_le_d (by simp [f1]) α) hαcycle hαsupport with ⟨P, hPLength, hcomputesf1⟩
-      rcases (hF2 f2 hf2depth_le_d (by simp [f2]) β) hβcycle hβsupport with ⟨Q, hQLength, hcomputesf2⟩
+      rcases (F_ih 0 f1 hf1depth_le_d (by simp [f1]) α) hαcycle hαsupport with ⟨P, hPLength, hcomputesf1⟩
+      rcases (F_ih 1 f2 hf2depth_le_d (by simp [f2]) β) hβcycle hβsupport with ⟨Q, hQLength, hcomputesf2⟩
       rcases and_computable α β hαcycle hβcycle f1 f2 P Q hcomputesf1 hcomputesf2 with ⟨R, hRLength, hComputes⟩
       have existsαP :
         ∃ (α : Equiv.Perm (Fin 5)),
@@ -309,12 +326,13 @@ theorem barrington_theorem
         refine ⟨(α * β * α⁻¹ * β⁻¹), hαβConjProd, hαβConjProdSupport, ?_⟩
         . use R
           constructor
-          · exact two_mul_add_le_pow_succ_of_le_pow_pred P.length Q.length R.length d F1.depth F2.depth hPLength hQLength hRLength hφd
+          · rw [add_comm] at hφd
+            exact two_mul_add_le_pow_succ_of_le_pow_pred P.length Q.length R.length d (formula_in 0).depth (formula_in 1).depth hPLength hQLength hRLength (by grind)
           · rw [computes_with] at hComputes
             have f1_and_f2_eq_f : ∀ (x : Input m), (f1 x ∧ f2 x) = f x := by
               intro x
               rw [← hφf x]
-              simp [f1, f2, Formula.eval]
+              simp [f1, f2, Formula.eval, BoolBasis.eval]
             intro x
             simp [hComputes x, Bool.decide_congr (iff_of_eq (f1_and_f2_eq_f x))]
       intro γ hγcycle hγsupport
@@ -323,54 +341,5 @@ theorem barrington_theorem
       use T
       rw [hTlen]
       exact And.intro hSlen hTcomputes
-
-
-  case cons demorgan_basis.not F F_ih =>
-    unfold Formula.depth at hφd
-    simp [Formula.eval] at hφf
-    have hF_eval_eq : ∀ (x : Input m), F.eval x = decide ¬f x = true := by
-      simp [hφf]
-    have ih := @F_ih (d - 1) (λ x => ¬ f x) (by grind) hF_eval_eq
-    intro α hαcycle hαsupport
-    rcases ih α hαcycle hαsupport with ⟨P, hPlen, hcomputes_withP⟩
-    rcases not_computable α P (λ x => ¬ f x) hαcycle hcomputes_withP with
-      ⟨Q, hQLen, hcomputes_withQ⟩
-    use Q
-    constructor
-    · exact succ_le_four_pow_of_le_four_pow_pred Q.length P.length d (Nat.le_of_add_right_le hφd) hQLen hPlen
-    · simp at hcomputes_withQ
-      exact hcomputes_withQ
-
-  case cons demorgan_basis.and F1 F2 hF1 hF2 =>
-    let f1 : Input m → Bool := λ x => F1.eval x
-    let f2 : Input m → Bool := λ x => F2.eval x
-    unfold Formula.depth at hφd
-    have hf1depth_le_d : F1.depth ≤ d - 1 := by grind
-    have hf2depth_le_d : F2.depth ≤ d - 1 := by grind
-    rcases product_cycles_conjugate_cycle with ⟨α, β, hαcycle, hαsupport, hβcycle, hβsupport, hαβConjProd, hαβConjProdSupport⟩
-    rcases (hF1 f1 hf1depth_le_d (by simp [f1]) α) hαcycle hαsupport with ⟨P, hPLength, hcomputesf1⟩
-    rcases (hF2 f2 hf2depth_le_d (by simp [f2]) β) hβcycle hβsupport with ⟨Q, hQLength, hcomputesf2⟩
-    rcases and_computable α β hαcycle hβcycle f1 f2 P Q hcomputesf1 hcomputesf2 with ⟨R, hRLength, hComputes⟩
-    have existsαP :
-      ∃ (α : Equiv.Perm (Fin 5)),
-      α.IsCycle ∧ α.support.card = 5 ∧ ∃ P,
-      List.length P ≤ 4 ^ d ∧ computes_with α P f := by
-      refine ⟨(α * β * α⁻¹ * β⁻¹), hαβConjProd, hαβConjProdSupport, ?_⟩
-      . use R
-        constructor
-        · exact two_mul_add_le_pow_succ_of_le_pow_pred P.length Q.length R.length d F1.depth F2.depth hPLength hQLength hRLength hφd
-        · rw [computes_with] at hComputes
-          have f1_and_f2_eq_f : ∀ (x : Input m), (f1 x ∧ f2 x) = f x := by
-            intro x
-            rw [← hφf x]
-            simp [f1, f2, Formula.eval]
-          intro x
-          simp [hComputes x, Bool.decide_congr (iff_of_eq (f1_and_f2_eq_f x))]
-    intro γ hγcycle hγsupport
-    rcases existsαP with ⟨δ, hδCycle, hδSupport, S, hSlen, hSComputes⟩
-    rcases @computable_for_conj_cycles 5 m δ γ S f hδCycle hγcycle (by rw [hδSupport, hγsupport]) hSComputes with ⟨T, hTlen, hTcomputes⟩
-    use T
-    rw [hTlen]
-    exact And.intro hSlen hTcomputes
 
 end BarringtonTheorem
