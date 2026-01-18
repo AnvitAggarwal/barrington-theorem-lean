@@ -13,10 +13,49 @@ attribute [grind =] List.prod_append
 lemma evalProgram_join (P : GroupProgram (Equiv.Perm (Fin n)) m) (Q : GroupProgram (Equiv.Perm (Fin n)) m) :
   ∀ (x : Input m), evalProgram x (P ++ Q) = (evalProgram x P) * (evalProgram x Q) := by grind
 
+lemma evalTriple_mul (t : GPTriple (Equiv.Perm (Fin n)) m) (α : Equiv.Perm (Fin n)) :
+  ∀ (x : Input m), evalTriple x
+    { i := t.i,
+      g₀ := α * t.g₀,
+      g₁ := α * t.g₁ }  = α * evalTriple x t := by
+  intro x
+  simp [evalTriple]
+
+lemma evalTriple_mul_end (t : GPTriple (Equiv.Perm (Fin n)) m) (α : Equiv.Perm (Fin n)) :
+  ∀ (x : Input m), evalTriple x
+    { i := t.i,
+      g₀ := t.g₀ * α,
+      g₁ := t.g₁ * α }  = evalTriple x t * α := by
+  intro x
+  simp [evalTriple]
+
 lemma evalProgram_product (P : GroupProgram (Equiv.Perm (Fin n)) m) (α : Equiv.Perm (Fin n)) (fm : Fin m) :
   ∀ (x : Input m), evalProgram x (P ++ [{i := fm, g₀ := α, g₁ := α}])  = evalProgram x P * α := by
   grind [List.prod_cons, List.prod_nil, mul_one]
 
+lemma mapIdx_id : (List.mapIdx (fun _ t => t) tl) = tl := by
+  induction tl with
+  | nil => simp
+  | cons hd tl ih =>
+    simp [ih]
+    
+
+lemma evalProgram_product' (P : GroupProgram (Equiv.Perm (Fin n)) m) (α : Equiv.Perm (Fin n)) :
+  ∀ (x : Input m), evalProgram x (P.mapIdx (λ idx t =>
+    if idx = 0 then
+      { i := t.i, g₀ := α * t.g₀, g₁ := α * t.g₁ }
+    else
+      t))  = α * evalProgram x P := by
+  intro x
+  simp [evalProgram]
+  match P with
+  | [] => sorry
+  | hd :: tl => 
+    simp [List.prod_cons]
+    rw [evalTriple_mul hd α x]
+    rw [mul_assoc]
+    rw [mapIdx_id]
+    
 lemma evalProgram_conjugate
     (P : GroupProgram (Equiv.Perm (Fin n)) m)
     (γ : Equiv.Perm (Fin n)) (x : Input m) :
@@ -217,6 +256,42 @@ lemma and_computable
         rw [hP, hQ, hR, hS]
         rw [mul_one, mul_one, mul_one]
 
+lemma not_computable'
+    (α : Equiv.Perm (Fin n))
+    (P : GroupProgram (Equiv.Perm (Fin n)) m)
+    (f : Input m → Bool)
+    (hα_cycle : Equiv.Perm.IsCycle α)
+    (hαcomputes : computes_with α P f) :
+    ∃ (Q : GroupProgram (Equiv.Perm (Fin n)) m),
+      Q.length = P.length ∧ computes_with α Q (λ x => ¬ f x) := by
+    rcases computable_for_conj_cycles α α⁻¹ P f hα_cycle (Equiv.Perm.IsCycle.inv hα_cycle) (by simp) hαcomputes with ⟨Q, hQLen, hQcomputes⟩
+    let R : GroupProgram (Equiv.Perm (Fin n)) m :=
+      Q.mapIdx (λ idx t =>
+        if idx = 0 then
+          { i := t.i,
+            g₀ := α * t.g₀,
+            g₁ := α * t.g₁ }
+        else
+          t)
+    use R
+    constructor
+    . grind
+    . simp only [R, computes_with]
+      intro x
+      rw [(evalProgram_product' Q α)]
+      unfold computes_with at hQcomputes
+      have h1 := hQcomputes x
+      by_cases f x
+      case pos hpos=>
+        simp [hpos] at h1
+        simp [hpos]
+        rw [h1]
+        exact mul_inv_cancel α
+      case neg hneg =>
+        simp [hneg] at h1
+        simp [hneg]
+        exact h1
+
 variable [hm : NeZero m]
 
 lemma not_computable
@@ -342,4 +417,12 @@ theorem barrington_theorem
       rw [hTlen]
       exact And.intro hSlen hTcomputes
 
+    | demorgan_basis.or =>
+      sorry
+
 end BarringtonTheorem
+
+-- every gate can be formed by AND and NOT gates
+def formed_and_not [BoolBasis b] (g : b) : ∃ φg : Formula (BoolBasis.arity g) b,
+  ∀ xs, Formula.eval φg xs = BoolBasis.eval g xs := by
+  sorry

@@ -10,15 +10,18 @@ class BoolBasis (b : Type) where
 inductive demorgan_basis where
 | not : demorgan_basis
 | and : demorgan_basis
+| or : demorgan_basis
 
 instance : BoolBasis demorgan_basis where
   arity
     | demorgan_basis.not => 1
     | demorgan_basis.and => 2
+    | demorgan_basis.or => 2
 
   eval
     | demorgan_basis.not => fun xs => !(xs 0)
     | demorgan_basis.and => fun xs => xs 0 && xs 1
+    | demorgan_basis.or => fun xs => xs 0 || xs 1
 
 inductive Formula (n : ℕ) (b : Type) [BoolBasis b]: Type where
   | var : Fin n → Formula n b
@@ -58,16 +61,21 @@ def env1 : Fin 8 → Bool :=
   fun i => if i < l.length then l[i]! else false
 
 def example_formula : Formula 8 demorgan_basis :=
-  let fnot : Fin 1 → Formula 8 demorgan_basis :=
+  let f_not : Fin 1 → Formula 8 demorgan_basis :=
     fun
     | ⟨0, _⟩ => Formula.var 2
 
-  let fand : Fin 2 → Formula 8 demorgan_basis :=
+  let f_and : Fin 2 → Formula 8 demorgan_basis :=
     fun
     | ⟨0, _⟩ => Formula.var 3
-    | ⟨1, _⟩ => Formula.cons demorgan_basis.not fnot
+    | ⟨1, _⟩ => Formula.cons demorgan_basis.not f_not
 
-  Formula.cons demorgan_basis.and fand
+  let f_or : Fin 2 → Formula 8 demorgan_basis :=
+    fun
+    | ⟨0, _⟩ => Formula.var 4
+    | ⟨1, _⟩ => Formula.cons demorgan_basis.and f_and
+
+  Formula.cons demorgan_basis.or f_or
 
 #eval Formula.eval example_formula env1
 #eval Formula.size example_formula
